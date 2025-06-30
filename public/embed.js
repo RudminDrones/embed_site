@@ -1,7 +1,6 @@
 (() => {
   const q = new URLSearchParams(location.search);
 
-  /* ---------- required URLs ---------- */
   const ply      = q.get('ply');
   const settings = q.get('settings');
   if (!ply || !settings) {
@@ -10,20 +9,16 @@
     return;
   }
 
-  /* ---------- optional URLs ---------- */
   const poster = q.get('poster') ||
                  ply.replace(/\.compressed\.ply$/, '_poster.png');
-  const skybox = q.get('skybox') ||
-                 'https://viewer.rdcont.us/skybox.png';
+  const skybox = 'https://viewer.rdcont.us/skybox.png';   // ← hard-coded
 
-  /* ---------- build viewer URL ------- */
   const viewer = new URL('https://viewer.rdcont.us/');
   viewer.searchParams.set('content',  ply);
   viewer.searchParams.set('settings', settings);
   viewer.searchParams.set('poster',   poster);
   viewer.searchParams.set('skybox',   skybox);
 
-  /* ---------- inject markup ---------- */
   document.getElementById('app').innerHTML = `
     <div class="wrapper">
       <div id="cover" class="cover">
@@ -37,7 +32,6 @@
       <iframe id="viewer-frame" loading="lazy" allowfullscreen></iframe>
     </div>`;
 
-  /* ---------- button handler ---------- */
   document.getElementById('btn-load').onclick = () => {
     document.getElementById('viewer-frame').src = viewer;
     document.getElementById('cover').style.display = 'none';
