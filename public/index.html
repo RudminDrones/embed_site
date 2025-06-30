@@ -62,11 +62,11 @@
             text-decoration: none;
             display: inline-block;
         }
-        #ui-svg {
+        #ui-controls {
             margin-top: 20px;
             padding: 0 10px;
-            width: 100%;
-            max-width: 300px;
+            color: #ccc;
+            font-size: 0.9rem;
         }
         #viewer {
             width: 100%;
@@ -88,8 +88,8 @@
             <div id="controls">
                 <button id="load-btn" class="btn">▶ Load 3D model</button><br>
                 <a id="new-tab-btn" class="btn btn-secondary" target="_blank">↗ Open in New Tab</a>
-                <div id="ui-svg">
-                    <!-- SVG will be loaded here -->
+                <div id="ui-controls">
+                    Controls: Orbit — click and drag | Zoom — scroll wheel | Pan — right click + drag
                 </div>
             </div>
         </div>
@@ -127,35 +127,6 @@
         if (window.innerWidth <= 768) {
             document.getElementById('new-tab-btn').innerHTML = '▶ Open';
         }
-        
-        // Load SVG controls - try without the svg for now to debug
-        fetch('/public/ui.svg')
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Failed to load SVG');
-                    return '';
-                }
-                return response.text();
-            })
-            .then(svgContent => {
-                if (svgContent) {
-                    const svgContainer = document.getElementById('ui-svg');
-                    svgContainer.innerHTML = svgContent;
-                    const svg = svgContainer.querySelector('svg');
-                    if (svg) {
-                        svg.setAttribute('width', '280');
-                        svg.setAttribute('height', '122');
-                        svg.style.maxWidth = '100%';
-                        svg.style.height = 'auto';
-                        svg.style.opacity = '0.65';
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error loading SVG:', err);
-                // Fallback text if SVG fails to load
-                document.getElementById('ui-svg').innerHTML = '<div style="color:#ccc;font-size:0.9rem;margin-top:12px;padding:0 10px;">Controls: Orbit — click and drag | Zoom — scroll wheel | Pan — right click + drag</div>';
-            });
     </script>
 </body>
 </html>
