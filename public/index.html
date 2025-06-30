@@ -54,6 +54,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             cursor: pointer;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .btn-secondary {
             background: #444;
@@ -64,8 +65,8 @@
         #ui-svg {
             margin-top: 20px;
             padding: 0 10px;
-            display: flex;
-            justify-content: center;
+            width: 100%;
+            max-width: 300px;
         }
         #viewer {
             width: 100%;
@@ -83,11 +84,13 @@
 <body>
     <div id="container">
         <div id="cover">
-            <img id="poster" alt="Cover Image">
+            <img id="poster" alt="Cover Image" onerror="this.style.display='none'">
             <div id="controls">
                 <button id="load-btn" class="btn">▶ Load 3D model</button><br>
                 <a id="new-tab-btn" class="btn btn-secondary" target="_blank">↗ Open in New Tab</a>
-                <div id="ui-svg"></div>
+                <div id="ui-svg">
+                    <!-- SVG will be loaded here -->
+                </div>
             </div>
         </div>
         <iframe id="viewer" loading="lazy" allow="fullscreen" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
@@ -96,16 +99,20 @@
     <script>
         // Get URL parameters
         const params = new URLSearchParams(window.location.search);
-        const settings = params.get('settings');
-        const content = params.get('content');
-        const poster = params.get('poster');
+        const settings = params.get('settings') || '';
+        const content = params.get('content') || '';
+        const poster = params.get('poster') || '';
         
         // Construct viewer URL
         const skybox = 'https://viewer.rdcont.us/skybox.png';
         const viewerUrl = `https://viewer.rdcont.us/?skybox=${encodeURIComponent(skybox)}&settings=${encodeURIComponent(settings)}&content=${encodeURIComponent(content)}&poster=${encodeURIComponent(poster)}`;
         
-        // Set poster image
-        document.getElementById('poster').src = poster;
+        // Set poster image if provided
+        if (poster) {
+            document.getElementById('poster').src = poster;
+        } else {
+            document.getElementById('poster').style.display = 'none';
+        }
         
         // Set new tab link
         document.getElementById('new-tab-btn').href = viewerUrl;
@@ -116,25 +123,38 @@
             document.getElementById('viewer').src = viewerUrl;
         });
         
-        // Load SVG controls
-        fetch('./public/ui.svg')
-            .then(response => response.text())
-            .then(svgContent => {
-                const svgContainer = document.getElementById('ui-svg');
-                svgContainer.innerHTML = svgContent;
-                const svg = svgContainer.querySelector('svg');
-                if (svg) {
-                    svg.setAttribute('width', '280');
-                    svg.setAttribute('height', '122');
-                    svg.style.maxWidth = '100%';
-                    svg.style.height = 'auto';
-                    svg.style.opacity = '0.65';
-                    // Update all fill colors to light grey
-                    svg.querySelectorAll('g, path').forEach(el => {
-                        el.style.fill = '#cccccc';
-                        el.style.stroke = '#cccccc';
-                    });
+        // For mobile, just show "Open" text
+        if (window.innerWidth <= 768) {
+            document.getElementById('new-tab-btn').innerHTML = '▶ Open';
+        }
+        
+        // Load SVG controls - try without the svg for now to debug
+        fetch('/public/ui.svg')
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Failed to load SVG');
+                    return '';
                 }
+                return response.text();
+            })
+            .then(svgContent => {
+                if (svgContent) {
+                    const svgContainer = document.getElementById('ui-svg');
+                    svgContainer.innerHTML = svgContent;
+                    const svg = svgContainer.querySelector('svg');
+                    if (svg) {
+                        svg.setAttribute('width', '280');
+                        svg.setAttribute('height', '122');
+                        svg.style.maxWidth = '100%';
+                        svg.style.height = 'auto';
+                        svg.style.opacity = '0.65';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error loading SVG:', err);
+                // Fallback text if SVG fails to load
+                document.getElementById('ui-svg').innerHTML = '<div style="color:#ccc;font-size:0.9rem;margin-top:12px;padding:0 10px;">Controls: Orbit — click and drag | Zoom — scroll wheel | Pan — right click + drag</div>';
             });
     </script>
 </body>
