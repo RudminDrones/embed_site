@@ -1,134 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #111;
-        }
-        #cover {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #111;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-        #poster {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.25;
-            z-index: -1;
-        }
-        #controls {
-            z-index: 3;
-            text-align: center;
-        }
-        .btn {
-            margin: 6px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border: none;
-            background: #0d6efd;
-            color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            cursor: pointer;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .btn-secondary {
-            background: #444;
-            color: #eee;
-            text-decoration: none;
-            display: inline-block;
-        }
-        #ui-controls {
-            margin-top: 20px;
-            padding: 0 10px;
-            color: #ccc;
-            font-size: 0.9rem;
-        }
-        #viewer {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: #111;
-            display: block;
-        }
-        @media (max-width: 768px) {
-            #load-btn { display: none !important; }
-            .btn-secondary { padding: 10px 20px !important; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Model Viewer</title>
+
+<!-- ─── BASE STYLES ────────────────────────────────────────────────────────── -->
+<style>
+    :root {
+        --accent: #0d6efd;
+        --bg:     #111;
+        --text:   #ccc;
+        --radius: 10px;
+    }
+
+    /* page */
+    body,html {
+        margin:0; padding:0; height:100%;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        background:var(--bg); overflow:hidden;
+    }
+    #container { position:relative; width:100vw; height:100vh; }
+
+    /* splash / cover */
+    #cover {
+        position:absolute; inset:0;
+        display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        background:var(--bg); z-index:2;
+        text-align:center;
+    }
+    #poster {
+        position:absolute; inset:0;
+        width:100%; height:100%; object-fit:cover;
+        opacity:.25; pointer-events:none;
+    }
+
+    /* controls */
+    #controls {
+        display:flex; flex-direction:column; align-items:center; gap:12px;
+        z-index:3;
+    }
+    .btn {
+        padding:10px 24px; font-size:1rem; border:none;
+        border-radius:var(--radius); cursor:pointer;
+        box-shadow:0 4px 12px rgba(0,0,0,.5);
+        font-family:inherit;
+    }
+    .btn-primary   { background:var(--accent); color:#fff; }
+    .btn-secondary { background:#444;         color:#eee; text-decoration:none; }
+
+    /* logo / svg */
+    .logo {
+        max-width:280px; width:70%; height:auto; opacity:.65;
+    }
+
+    /* responsive tweak */
+    @media (max-width:768px){
+        #load-btn      { display:none; }
+        .btn-secondary { padding:10px 24px; }
+    }
+
+    /* viewer frame */
+    #viewer { width:100%; height:100%; border:0; background:var(--bg); }
+</style>
 </head>
 <body>
-    <div id="container">
-        <div id="cover">
-            <img id="poster" alt="Cover Image" onerror="this.style.display='none'">
-            <div id="controls">
-                <button id="load-btn" class="btn">▶ Load 3D model</button><br>
-                <a id="new-tab-btn" class="btn btn-secondary" target="_blank">↗ Open in New Tab</a>
-                <style>
-                    .logo{max-width:280px;width:70%;height:auto;opacity:.65}
-                </style>
-                <img class="logo" src="ui.svg" alt="">
+<div id="container">
 
-            </div>
+    <!-- ─── COVER ─────────────────────────────────────────────────────────── -->
+    <div id="cover">
+        <img id="poster" alt="Cover Image">
+        <div id="controls">
+            <button id="load-btn" class="btn btn-primary">▶ Load 3D model</button>
+            <a id="new-tab-btn" class="btn btn-secondary" target="_blank">↗ Open in New Tab</a>
+            <!-- svg / logo goes right here -->
+            <img src="logo.svg" class="logo" alt="Controls illustration">
         </div>
-        <iframe id="viewer" loading="lazy" allow="fullscreen" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
     </div>
 
-    <script>
-        // Get URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const settings = params.get('settings') || '';
-        const content = params.get('content') || '';
-        const poster = params.get('poster') || '';
-        
-        // Construct viewer URL
-        const skybox = 'https://viewer.rdcont.us/skybox.png';
-        const viewerUrl = `https://viewer.rdcont.us/?skybox=${encodeURIComponent(skybox)}&settings=${encodeURIComponent(settings)}&content=${encodeURIComponent(content)}&poster=${encodeURIComponent(poster)}`;
-        
-        // Set poster image if provided
-        if (poster) {
-            document.getElementById('poster').src = poster;
-        } else {
-            document.getElementById('poster').style.display = 'none';
-        }
-        
-        // Set new tab link
-        document.getElementById('new-tab-btn').href = viewerUrl;
-        
-        // Load button functionality
-        document.getElementById('load-btn').addEventListener('click', function() {
-            document.getElementById('cover').style.display = 'none';
-            document.getElementById('viewer').src = viewerUrl;
-        });
-        
-        // For mobile, just show "Open" text
-        if (window.innerWidth <= 768) {
-            document.getElementById('new-tab-btn').innerHTML = '▶ Open';
-        }
-    </script>
+    <!-- viewer iframe -->
+    <iframe id="viewer" loading="lazy" allowfullscreen></iframe>
+</div>
+
+<!-- ─── SCRIPT ──────────────────────────────────────────────────────────── -->
+<script>
+    // 1. Read query-string parameters
+    const qs       = new URLSearchParams(location.search);
+    const settings = qs.get('settings') || '';
+    const content  = qs.get('content')  || '';
+    const poster   = qs.get('poster')   || '';
+
+    // 2. Build the viewer URL
+    const skybox   = 'https://viewer.rdcont.us/skybox.png';
+    const viewerURL = `https://viewer.rdcont.us/?skybox=${encodeURIComponent(skybox)}&settings=${encodeURIComponent(settings)}&content=${encodeURIComponent(content)}&poster=${encodeURIComponent(poster)}`;
+
+    // 3. Apply poster (if any)
+    if (poster) { document.getElementById('poster').src = poster; }
+
+    // 4. “Open in New Tab” link
+    document.getElementById('new-tab-btn').href = viewerURL;
+
+    // 5. “Load 3D model” button
+    document.getElementById('load-btn').addEventListener('click', () => {
+        document.getElementById('cover').style.display = 'none';
+        document.getElementById('viewer').src = viewerURL;
+    });
+
+    // 6. Mobile-only label tweak
+    if (innerWidth <= 768) {
+        document.getElementById('new-tab-btn').textContent = '▶ Open';
+    }
+</script>
 </body>
 </html>
